@@ -71,6 +71,9 @@ AABStageGimmick::AABStageGimmick()
 		FVector BoxLocation = Stage->GetSocketLocation(GateSocket) / 2;
 		RewardBoxLocations.Add(GateSocket, BoxLocation);
 	}
+
+	// Stat
+	CurrentStageNum = 0;
 }
 
 void AABStageGimmick::OnConstruction(const FTransform& Transform)
@@ -106,7 +109,13 @@ void AABStageGimmick::OnGateTriggerBeginOverlap(UPrimitiveComponent* OverlappedC
 
 	if (!bResult)
 	{
-		GetWorld()->SpawnActor<AABStageGimmick>(NewLocation, FRotator::ZeroRotator);
+		const FTransform NewTransform(NewLocation);
+		AABStageGimmick* NewGimmick = GetWorld()->SpawnActorDeferred<AABStageGimmick>(AABStageGimmick::StaticClass(), NewTransform);
+        if (NewGimmick)
+        {
+            NewGimmick->SetStageNum(CurrentStageNum + 1);
+			NewGimmick->FinishSpawning(NewTransform);
+        }
 	}
 }
 
@@ -185,12 +194,13 @@ void AABStageGimmick::OnOpponentDestroyed(AActor* DestroyedActor)
 
 void AABStageGimmick::OnOpponentSpawn()
 {
-	const FVector SpawnLocation = GetActorLocation() + FVector::UpVector * 88.0f;
-	AActor* OpponentActor = GetWorld()->SpawnActor(OpponentClass, &SpawnLocation, &FRotator::ZeroRotator);
-	AABCharacterNonPlayer* ABOpponentCharacter = Cast<AABCharacterNonPlayer>(OpponentActor);
+	const FTransform SpawnTransform(GetActorLocation() + FVector::UpVector * 88.0f);
+	AABCharacterNonPlayer* ABOpponentCharacter = GetWorld()->SpawnActorDeferred<AABCharacterNonPlayer>(OpponentClass, SpawnTransform);
 	if (ABOpponentCharacter)
 	{
 		ABOpponentCharacter->OnDestroyed.AddDynamic(this, &AABStageGimmick::OnOpponentDestroyed);
+        ABOpponentCharacter->SetLevel(CurrentStageNum);
+		ABOpponentCharacter->FinishSpawning(SpawnTransform);
 	}
 }
 
@@ -216,9 +226,8 @@ void AABStageGimmick::SpawnRewardBoxes()
 {
 	for (const auto& RewardBoxLocation : RewardBoxLocations)
 	{
-		FVector WorldSpawnLocation = GetActorLocation() + RewardBoxLocation.Value + FVector(0.0f, 0.0f, 30.0f);
-		AActor* ItemActor = GetWorld()->SpawnActor(RewardBoxClass, &WorldSpawnLocation, &FRotator::ZeroRotator);
-		AABItemBox* RewardBoxActor = Cast<AABItemBox>(ItemActor);
+		FTransform SpawnTransform(GetActorLocation() + RewardBoxLocation.Value + FVector(0.0f, 0.0f, 30.0f));
+		AABItemBox* RewardBoxActor = GetWorld()->SpawnActorDeferred<AABItemBox>(RewardBoxClass, SpawnTransform);
 		if (RewardBoxActor)
 		{
 			RewardBoxActor->Tags.Add(RewardBoxLocation.Key);
@@ -226,4 +235,12 @@ void AABStageGimmick::SpawnRewardBoxes()
 			RewardBoxes.Add(RewardBoxActor);
 		}
 	}
+
+    for (const auto& RewardBox : RewardBoxes)
+    {
+        if (RewardBox.IsValid())
+        {
+            RewardBox->FinishSpawning(RewardBox->GetActorTransform());
+        }
+    }
 }
