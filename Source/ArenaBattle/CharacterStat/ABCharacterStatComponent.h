@@ -9,6 +9,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnHpZeroDelegate);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHpChangedDelegate, float /*CurrentHp*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStatChangedDelegate, const FABCharacterStat& /*Base*/, const FABCharacterStat& /*Modifier*/);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ARENABATTLE_API UABCharacterStatComponent : public UActorComponent
@@ -16,20 +17,22 @@ class ARENABATTLE_API UABCharacterStatComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
 	UABCharacterStatComponent();
 
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+    virtual void InitializeComponent() override;	
 
 public:
     FOnHpZeroDelegate OnHpZero;
     FOnHpChangedDelegate OnHpChanged;
+    FOnStatChangedDelegate OnStatChanged;
 
     void SetLevelStat(int32 InNewLevel);
     FORCEINLINE float GetCurrentLevel() const { return CurrentLevel; }
-    FORCEINLINE void SetModifierStat(const FABCharacterStat& InModifierStat) { ModifierStat = InModifierStat; }
+    FORCEINLINE void SetBaseStat(const FABCharacterStat& InBaseStat) { BaseStat = InBaseStat; OnStatChanged.Broadcast(BaseStat, ModifierStat); }
+    FORCEINLINE void SetModifierStat(const FABCharacterStat& InModifierStat) { ModifierStat = InModifierStat; OnStatChanged.Broadcast(BaseStat, ModifierStat); }
+    FORCEINLINE const FABCharacterStat& GetBaseStat() const { return BaseStat; }
+    FORCEINLINE const FABCharacterStat& GetModifierStat() const { return ModifierStat; }
     FORCEINLINE FABCharacterStat GetTotalStat() const { return BaseStat + ModifierStat; }
     FORCEINLINE float GetCurrentHp() const { return CurrentHp; }
     FORCEINLINE float GetAttackRadius() const { return AttackRadius; }
