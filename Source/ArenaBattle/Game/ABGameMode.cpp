@@ -2,6 +2,7 @@
 
 
 #include "Game/ABGameMode.h"
+#include "Player/ABPlayerController.h"
 
 AABGameMode::AABGameMode()
 {
@@ -17,9 +18,46 @@ AABGameMode::AABGameMode()
         DefaultPawnClass = DefaultPawnClassRef.Class;
     }
 
-    static ConstructorHelpers::FClassFinder<APlayerController> PlayerControllerClassRef(TEXT("/Script/ArenaBattle.ABPlayerController"));
+    static ConstructorHelpers::FClassFinder<APlayerController> PlayerControllerClassRef(TEXT("/Game/ArenaBattle/Blueprint/BP_ABPlayerController.BP_ABPlayerController_C"));
     if (PlayerControllerClassRef.Class)
     {
         PlayerControllerClass = PlayerControllerClassRef.Class;
     }
+
+    ClearScore = 3;
+    CurrentScore = 0;
+    bIsCleared = false;
+}
+
+void AABGameMode::OnPlayerScoreChanged(int32 NewPlayerScore)
+{
+    CurrentScore = NewPlayerScore;
+    AABPlayerController* ABPlayerController = Cast<AABPlayerController>(GetWorld()->GetFirstPlayerController());
+    if (ABPlayerController)
+    {
+        ABPlayerController->GameScoreChanged(CurrentScore);
+    }
+
+    if (CurrentScore >= ClearScore)
+    {
+        bIsCleared = true;    
+        if (ABPlayerController)
+        {
+            ABPlayerController->GameClear();
+        }
+    }
+}
+
+void AABGameMode::OnPlayerDead()
+{
+    AABPlayerController* ABPlayerController = Cast<AABPlayerController>(GetWorld()->GetFirstPlayerController());
+    if (ABPlayerController)
+    {
+        ABPlayerController->GameOver();
+    }
+}
+
+bool AABGameMode::IsGameCleared()
+{
+    return bIsCleared;
 }

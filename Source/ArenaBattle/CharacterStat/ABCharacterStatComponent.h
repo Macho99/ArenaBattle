@@ -29,11 +29,13 @@ public:
 
     void SetLevelStat(int32 InNewLevel);
     FORCEINLINE float GetCurrentLevel() const { return CurrentLevel; }
+    FORCEINLINE void AddBaseStat(const FABCharacterStat& InAddedBaseStat) { BaseStat = BaseStat + InAddedBaseStat; OnStatChanged.Broadcast(BaseStat, ModifierStat); }
     FORCEINLINE void SetBaseStat(const FABCharacterStat& InBaseStat) { BaseStat = InBaseStat; OnStatChanged.Broadcast(BaseStat, ModifierStat); }
     FORCEINLINE void SetModifierStat(const FABCharacterStat& InModifierStat) { ModifierStat = InModifierStat; OnStatChanged.Broadcast(BaseStat, ModifierStat); }
     FORCEINLINE const FABCharacterStat& GetBaseStat() const { return BaseStat; }
     FORCEINLINE const FABCharacterStat& GetModifierStat() const { return ModifierStat; }
     FORCEINLINE FABCharacterStat GetTotalStat() const { return BaseStat + ModifierStat; }
+    FORCEINLINE void HealHp(float InHealAmount) { SetHp(CurrentHp + InHealAmount); }
     FORCEINLINE float GetCurrentHp() const { return CurrentHp; }
     FORCEINLINE float GetAttackRadius() const { return AttackRadius; }
     float ApplyDamage(float InDamage);
